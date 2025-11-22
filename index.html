@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Comfy Gizmo Ignore List Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h2 {
+            margin-top: 40px;
+        }
+
+        button {
+            display: inline-block;
+            margin: 2px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f0f0f0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        code {
+            display: inline-block;
+            background: #eee;
+            padding: 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            overflow-x: auto;
+            word-wrap: normal;
+        }
+
+        details {
+            margin-top: 10px;
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        details summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        details summary::before {
+            content: "▶";
+            display: inline-block;
+            width: 1em;
+            margin-right: 0.25em;
+            transition: transform 0.2s ease;
+        }
+
+        details[open] summary::before {
+            content: "▼";
+        }
+
+        #searchBox {
+            margin-bottom: 10px;
+            padding: 6px;
+            width: 100%;
+        }
+
+        pre code {
+            display: block;
+            /* full width block */
+            background: #2d2d2d;
+            /* dark background */
+            color: #f8f8f2;
+            /* light text */
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            /* horizontal scroll if long line */
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre;
+            /* preserve formatting */
+        }
+
+        pre code span.keyword {
+            color: #66d9ef;
+            font-weight: bold;
+        }
+
+        pre code span.string {
+            color: #e6db74;
+        }
+
+        pre code span.comment {
+            color: #75715e;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Comfy Gizmo Ignore List Generator</h1>
+
+    <!-- Top Controls -->
+    <div>
+        <button onclick="document.getElementById('fileInput').click()">Upload CSV</button>
+        <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFile(event)">
+    </div>
+
+    <input type="text" id="searchBox" placeholder="Search pieces..." oninput="filterPieces()">
+
+    <h2>Current Selection</h2>
+    <p>Add this to <code>ignorePrefabNameList</code> in the Comfy Gizmo config file.</p>
+    <p>
+        <button onclick="copySelection()">Copy</button>
+        <code id="outputString">Loading default pieces...</code>
+    </p>
+    <br>
+
+    <div id="tableContainer"></div>
+
+    <h2>Current Selection</h2>
+    <p>Add this to <code>ignorePrefabNameList</code> in the Comfy Gizmo config file.</p>
+    <p>
+        <button onclick="copySelection()">Copy</button>
+        <code id="outputStringBottom">Loading default pieces...</code>
+    </p>
+    <hr>
+
+    <!-- Bottom Controls -->
+    <div>
+        <button onclick="document.getElementById('fileInput').click()">Upload CSV</button>
+        <button onclick="copySelection()">Copy Current Selection</button>
+    </div>
+
+    <hr>
+
+    <h2>Instructions & Disclaimer</h2>
+    <p>This tool is provided as-is. Use it at your own discretion. Intended for players or mod authors working with
+        Valheim piece lists.</p>
+    <p>To generate the YML files needed for this tool, run the command:</p>
+    <code>wackydb_all_pieces</code>
+    <p>That will create many <code>Piece_*.yml</code> files into <code>wackyDatabase-BulkYML/Pieces</code>.
+        Place the Python script below in that folder to generate a CSV for uploading.</p>
+
+    <details>
+        <summary><strong>Show Python Script</strong></summary>
+        <pre><code>
+import os
+import csv
+import yaml
+from collections import defaultdict
+
+def load_yaml_file(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def main():
+    folder = os.getcwd()
+    categories = defaultdict(list)
+    for filename in os.listdir(folder):
+        if filename.lower().endswith(".yml"):
+            full_path = os.path.join(folder, filename)
+            try:
+                data = load_yaml_file(full_path)
+                name = data.get("name")
+                category = data.get("piecehammerCategory", "Uncategorized")
+                if name:
+                    categories[category].append(name)
+            except Exception as e:
+                print(f"Error reading {filename}: {e}")
+    rows = []
+    for category in sorted(categories.keys(), key=str.lower):
+        for piece in sorted(categories[category], key=str.lower):
+            rows.append({"category": category, "piece": piece})
+    output_path = os.path.join(folder, "valPiecesByCategory.csv")
+    with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=["category", "piece"])
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"CSV file created: {output_path}")
+
+if __name__ == "__main__":
+    main()
+        </code></pre>
+    </details>
+
+    <script>
+        const defaultCSV = `category,piece
+All,piece_repair
+BuildingStonecutter,blackmarble_1x1
+BuildingStonecutter,blackmarble_2x1x1
+BuildingStonecutter,blackmarble_2x2x2
+BuildingStonecutter,blackmarble_arch
+BuildingStonecutter,blackmarble_base_1
+BuildingStonecutter,blackmarble_basecorner
+BuildingStonecutter,blackmarble_column_1
+BuildingStonecutter,blackmarble_column_2
+BuildingStonecutter,blackmarble_floor
+BuildingStonecutter,blackmarble_floor_triangle
+BuildingStonecutter,blackmarble_out_1
+BuildingStonecutter,blackmarble_outcorner
+BuildingStonecutter,blackmarble_stair
+BuildingStonecutter,blackmarble_tip
+BuildingStonecutter,crystal_wall_1x1
+BuildingStonecutter,flametal_gate
+BuildingStonecutter,iron_floor_1x1_v2
+BuildingStonecutter,iron_floor_2x2
+BuildingStonecutter,iron_grate
+BuildingStonecutter,iron_wall_1x1
+BuildingStonecutter,iron_wall_2x2
+BuildingStonecutter,piece_dvergr_metal_wall_2x2
+BuildingStonecutter,Piece_flametal_beam
+BuildingStonecutter,Piece_flametal_pillar
+BuildingStonecutter,Piece_grausten_floor_1x1
+BuildingStonecutter,Piece_grausten_floor_2x2
+BuildingStonecutter,Piece_grausten_floor_4x4
+BuildingStonecutter,Piece_grausten_pillar_arch
+BuildingStonecutter,Piece_grausten_pillar_arch_small
+BuildingStonecutter,Piece_grausten_pillarbase_medium
+BuildingStonecutter,Piece_grausten_pillarbase_small
+BuildingStonecutter,Piece_grausten_pillarbase_tapered
+BuildingStonecutter,Piece_grausten_pillarbase_tapered_inverted
+BuildingStonecutter,Piece_grausten_pillarbeam_medium
+BuildingStonecutter,Piece_grausten_pillarbeam_small
+BuildingStonecutter,piece_grausten_roof_45
+BuildingStonecutter,piece_grausten_roof_45_arch
+BuildingStonecutter,piece_grausten_roof_45_arch_corner
+BuildingStonecutter,piece_grausten_roof_45_arch_corner2
+BuildingStonecutter,piece_grausten_roof_45_corner
+BuildingStonecutter,piece_grausten_roof_45_corner2
+BuildingStonecutter,Piece_grausten_stone_ladder
+BuildingStonecutter,piece_grausten_stonestair
+BuildingStonecutter,Piece_grausten_wall_1x2
+BuildingStonecutter,Piece_grausten_wall_2x2
+BuildingStonecutter,Piece_grausten_wall_4x2
+BuildingStonecutter,Piece_grausten_wall_arch
+BuildingStonecutter,Piece_grausten_wall_arch_inverted
+BuildingStonecutter,Piece_grausten_window_2x2
+BuildingStonecutter,Piece_grausten_window_4x2
+BuildingStonecutter,stone_arch
+BuildingStonecutter,stone_floor_2x2
+BuildingStonecutter,stone_pillar
+BuildingStonecutter,stone_stair
+BuildingStonecutter,stone_wall_1x1
+BuildingStonecutter,stone_wall_2x1
+BuildingStonecutter,stone_wall_4x2
+BuildingWorkbench,ashwood_arch_big
+BuildingWorkbench,ashwood_beam_1m
+BuildingWorkbench,ashwood_beam_2m
+BuildingWorkbench,ashwood_deco_floor
+BuildingWorkbench,ashwood_decowall_2x2
+BuildingWorkbench,ashwood_decowall_divider
+BuildingWorkbench,ashwood_decowall_tree
+BuildingWorkbench,ashwood_door
+BuildingWorkbench,ashwood_floor_1x1
+BuildingWorkbench,ashwood_floor_2x2
+BuildingWorkbench,ashwood_halfwall_1x2
+BuildingWorkbench,ashwood_pole_1m
+BuildingWorkbench,ashwood_pole_2m
+BuildingWorkbench,ashwood_quarterwall_1x1
+BuildingWorkbench,ashwood_stair
+BuildingWorkbench,ashwood_wall_2x2
+BuildingWorkbench,ashwood_wall_arch
+BuildingWorkbench,ashwood_wall_beam_26
+BuildingWorkbench,ashwood_wall_beam_45
+BuildingWorkbench,ashwood_wall_cross_26
+BuildingWorkbench,ashwood_wall_cross_45
+BuildingWorkbench,ashwood_wall_roof_26
+BuildingWorkbench,ashwood_wall_roof_26_upsidedown
+BuildingWorkbench,ashwood_wall_roof_45
+BuildingWorkbench,ashwood_wall_roof_45_upsidedown
+BuildingWorkbench,darkwood_arch
+BuildingWorkbench,darkwood_beam
+BuildingWorkbench,darkwood_beam4x4
+BuildingWorkbench,darkwood_beam_26
+BuildingWorkbench,darkwood_beam_45
+BuildingWorkbench,darkwood_decowall
+BuildingWorkbench,darkwood_gate
+BuildingWorkbench,darkwood_pole
+BuildingWorkbench,darkwood_pole4
+BuildingWorkbench,darkwood_roof
+BuildingWorkbench,darkwood_roof_45
+BuildingWorkbench,darkwood_roof_icorner
+BuildingWorkbench,darkwood_roof_icorner_45
+BuildingWorkbench,darkwood_roof_ocorner
+BuildingWorkbench,darkwood_roof_ocorner_45
+BuildingWorkbench,darkwood_roof_top
+BuildingWorkbench,darkwood_roof_top_45
+BuildingWorkbench,piece_dvergr_spiralstair
+BuildingWorkbench,piece_dvergr_spiralstair_right
+BuildingWorkbench,piece_hexagonal_door
+BuildingWorkbench,wood_beam
+BuildingWorkbench,wood_beam_1
+BuildingWorkbench,wood_beam_26
+BuildingWorkbench,wood_beam_45
+BuildingWorkbench,wood_door
+BuildingWorkbench,wood_floor
+BuildingWorkbench,wood_floor_1x1
+BuildingWorkbench,wood_gate
+BuildingWorkbench,wood_log_26
+BuildingWorkbench,wood_log_45
+BuildingWorkbench,wood_pole
+BuildingWorkbench,wood_pole2
+BuildingWorkbench,wood_pole_log
+BuildingWorkbench,wood_pole_log_4
+BuildingWorkbench,wood_roof
+BuildingWorkbench,wood_roof_45
+BuildingWorkbench,wood_roof_icorner
+BuildingWorkbench,wood_roof_icorner_45
+BuildingWorkbench,wood_roof_ocorner
+BuildingWorkbench,wood_roof_ocorner_45
+BuildingWorkbench,wood_roof_top
+BuildingWorkbench,wood_roof_top_45
+BuildingWorkbench,wood_stair
+BuildingWorkbench,wood_stepladder
+BuildingWorkbench,wood_wall_half
+BuildingWorkbench,wood_wall_log
+BuildingWorkbench,wood_wall_log_4x0.5
+BuildingWorkbench,wood_wall_quarter
+BuildingWorkbench,wood_wall_roof
+BuildingWorkbench,wood_wall_roof_45
+BuildingWorkbench,wood_wall_roof_45_upsidedown
+BuildingWorkbench,wood_wall_roof_top
+BuildingWorkbench,wood_wall_roof_top_45
+BuildingWorkbench,wood_wall_roof_upsidedown
+BuildingWorkbench,wood_window
+BuildingWorkbench,woodiron_beam
+BuildingWorkbench,woodiron_beam_26
+BuildingWorkbench,woodiron_beam_45
+BuildingWorkbench,woodiron_pole
+BuildingWorkbench,woodwall
+CollectorSeries,BCC_CrystalCollector
+CollectorSeries,BGC_GuckCollector
+CollectorSeries,BRC_ResinCollector
+CollectorSeries,BTC_TarCollector
+Crafting,apiary_ext1
+Crafting,apiary_ext2
+Crafting,apiary_ext3
+Crafting,apiary_ext4
+Crafting,apiary_ext5
+Crafting,artisan_ext1
+Crafting,BCA_CookingPot
+Crafting,BCA_Crusher
+Crafting,BCA_DryingRack
+Crafting,BCA_Griller
+Crafting,BCA_LargeMeat_Griller
+Crafting,blackforge
+Crafting,blackforge_ext1
+Crafting,blackforge_ext2_vise
+Crafting,blackforge_ext3_metalcutter
+Crafting,BlackForge_ext3_TW
+Crafting,blackforge_ext4_gemcutter
+Crafting,BlackForge_ext4_TW
+Crafting,blastfurnace
+Crafting,cauldron_ext1_spice
+Crafting,cauldron_ext3_butchertable
+Crafting,cauldron_ext4_pots
+Crafting,cauldron_ext5_mortarandpestle
+Crafting,cauldron_ext6_rollingpins
+Crafting,charcoal_kiln
+Crafting,eitrrefinery
+Crafting,fermenter
+Crafting,forge
+Crafting,forge_ext1
+Crafting,forge_ext2
+Crafting,forge_ext3
+Crafting,forge_ext4
+Crafting,forge_ext5
+Crafting,forge_ext6
+Crafting,incinerator
+Crafting,mmo_fermenter
+Crafting,piece_apiary
+Crafting,piece_artisanstation
+Crafting,piece_beehive
+Crafting,piece_cauldron
+Crafting,piece_cookingstation
+Crafting,piece_cookingstation_iron
+Crafting,piece_magetable
+Crafting,piece_magetable_ext
+Crafting,piece_magetable_ext2
+Crafting,piece_magetable_ext3
+Crafting,piece_MeadCauldron
+Crafting,piece_oven
+Crafting,piece_preptable
+Crafting,piece_sapcollector
+Crafting,piece_spinningwheel
+Crafting,piece_stonecutter
+Crafting,piece_wisplure
+Crafting,piece_workbench
+Crafting,piece_workbench_ext1
+Crafting,piece_workbench_ext2
+Crafting,piece_workbench_ext3
+Crafting,piece_workbench_ext4
+Crafting,smelter
+Crafting,windmill
+Food Barrels,OH_Barley
+Food Barrels,OH_Blue_Mushrooms
+Food Barrels,OH_Blueberries
+Food Barrels,OH_Bukeberries
+Food Barrels,OH_Bzerker_Mushrooms
+Food Barrels,OH_Carrots
+Food Barrels,OH_CloudBerries
+Food Barrels,OH_Dandelion
+Food Barrels,OH_Egg_Basket
+Food Barrels,OH_Fiddlehead_Basket
+Food Barrels,OH_Fish
+Food Barrels,OH_Flax
+Food Barrels,OH_Honey
+Food Barrels,OH_JotunPuffs_Basket
+Food Barrels,OH_Magecap
+Food Barrels,OH_Onions
+Food Barrels,OH_Raspberries
+Food Barrels,OH_Red_Mushrooms
+Food Barrels,OH_RoyalJelly
+Food Barrels,OH_Sap_Barrel
+Food Barrels,OH_Seedbag
+Food Barrels,OH_SmokePuffs_Basket
+Food Barrels,OH_Thistle
+Food Barrels,OH_Turnips
+Food Barrels,OH_Vineberries
+Food Barrels,OH_Volture_Eggs
+Food Barrels,OH_Yellow_Mushrooms
+Furniture,ArmorStand
+Furniture,ashwood_bed
+Furniture,bed
+Furniture,Candle_resin
+Furniture,itemstand
+Furniture,itemstandh
+Furniture,jute_carpet
+Furniture,jute_carpet_blue
+Furniture,piece_asksvinskeleton
+Furniture,piece_banner01
+Furniture,piece_banner02
+Furniture,piece_banner03
+Furniture,piece_banner04
+Furniture,piece_banner05
+Furniture,piece_banner06
+Furniture,piece_banner07
+Furniture,piece_banner08
+Furniture,piece_banner09
+Furniture,piece_banner10
+Furniture,piece_banner11
+Furniture,piece_barber
+Furniture,piece_bathtub
+Furniture,piece_bed02
+Furniture,piece_bench01
+Furniture,piece_blackmarble_bench
+Furniture,piece_blackmarble_table
+Furniture,piece_blackmarble_throne
+Furniture,piece_blackwood_bench01
+Furniture,piece_bone_throne
+Furniture,piece_brazierceiling01
+Furniture,piece_brazierfloor01
+Furniture,piece_brazierfloor02
+Furniture,piece_chair
+Furniture,piece_chair02
+Furniture,piece_chair03
+Furniture,piece_chest
+Furniture,piece_chest_barrel
+Furniture,piece_chest_blackmetal
+Furniture,piece_chest_private
+Furniture,piece_chest_wood
+Furniture,piece_cloth_hanging_door
+Furniture,piece_cloth_hanging_door_blue
+Furniture,piece_cloth_hanging_door_blue2
+Furniture,piece_dvergr_lantern
+Furniture,piece_dvergr_lantern_pole
+Furniture,piece_gift1
+Furniture,piece_gift2
+Furniture,piece_gift3
+Furniture,piece_groundtorch
+Furniture,piece_groundtorch_blue
+Furniture,piece_groundtorch_green
+Furniture,piece_groundtorch_mist
+Furniture,piece_groundtorch_wood
+Furniture,piece_jackoturnip
+Furniture,piece_Lavalantern
+Furniture,piece_logbench01
+Furniture,piece_maypole
+Furniture,piece_mistletoe
+Furniture,piece_pot1
+Furniture,piece_pot2
+Furniture,piece_pot3
+Furniture,piece_table
+Furniture,piece_table_oak
+Furniture,piece_table_round
+Furniture,piece_throne01
+Furniture,piece_throne02
+Furniture,piece_walltorch
+Furniture,piece_xmascrown
+Furniture,piece_xmasgarland
+Furniture,piece_xmastree
+Furniture,rae_HorseChair
+Furniture,rae_OdinHorse_Rug
+Furniture,rae_OdinHorse_Rug_Headless
+Furniture,rug_asksvin
+Furniture,rug_Bjorn
+Furniture,rug_deer
+Furniture,rug_fur
+Furniture,rug_hare
+Furniture,rug_straw
+Furniture,rug_wolf
+Furniture,sign
+Misc,BatteringRam
+Misc,blackmarble_pile
+Misc,blackwood_stack
+Misc,bone_stack
+Misc,bonfire
+Misc,Cart
+Misc,Catapult
+Misc,coal_pile
+Misc,darkwood_raven
+Misc,darkwood_wolf
+Misc,fire_pit
+Misc,fire_pit_iron
+Misc,grausten_pile
+Misc,guard_stone
+Misc,hearth
+Misc,Karve
+Misc,piece_ArcheryTarget
+Misc,piece_cartographytable
+Misc,piece_chest_treasure
+Misc,piece_dvergr_sharpstakes
+Misc,piece_dvergr_stake_wall
+Misc,piece_sharpstakes
+Misc,piece_shieldgenerator
+Misc,piece_stakewall_blackwood
+Misc,piece_TrainingDummy
+Misc,piece_trap_troll
+Misc,piece_turret
+Misc,Placeable_HardRock
+Misc,portal_stone
+Misc,portal_wood
+Misc,rae_Campsite
+Misc,rae_Campsite_MiniPit
+Misc,rae_CampsiteBig
+Misc,rae_HorseCart
+Misc,rae_Sleepingbag
+Misc,Raft
+Misc,RepairStation
+Misc,skull_pile
+Misc,stake_wall
+Misc,stone_pile
+Misc,treasure_pile
+Misc,treasure_stack
+Misc,VikingShip
+Misc,VikingShip_Ashlands
+Misc,wood_core_stack
+Misc,wood_dragon1
+Misc,wood_fence
+Misc,wood_fine_stack
+Misc,wood_stack
+Misc,wood_yggdrasil_stack
+Warfare,ArcaneAnvil_TW
+Warfare,Armory_TW
+Warfare,FletcherTable_ext1_TW
+Warfare,FletcherTable_ext2_TW
+Warfare,FletcherTable_ext3_TW
+Warfare,FletcherTable_ext4_TW
+Warfare,FletcherTable_TW
+Warfare,PotionCauldron_TW
+Warfare,rug_BlackBear_TW
+Warfare,rug_Fox_TW
+Warfare,rug_GrizzlyBear_TW
+Warfare,rug_Rotten_TW
+Warfare,WeavingLoom_TW
+Warfare,WizardTable_ext2_TW
+Warfare,WizardTable_ext3_TW
+Warfare,WizardTable_ext4_TW
+Warfare,WizardTable_TW
+`;
+
+        let categories = {};
+
+        function parseCSV(text) {
+            categories = {};
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            lines.shift(); // remove header
+            for (let line of lines) {
+                const [category, piece] = line.split(",");
+                if (!categories[category]) categories[category] = [];
+                categories[category].push(piece);
+            }
+            renderTable();
+            updateOutput();
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => parseCSV(e.target.result);
+            reader.readAsText(file);
+        }
+
+        function renderTable() {
+            const container = document.getElementById("tableContainer");
+            container.innerHTML = "";
+
+            for (let category of Object.keys(categories).sort()) {
+                const section = document.createElement("details");
+                section.open = false; // collapsed by default
+
+                // Summary with left label and right buttons
+                const summary = document.createElement("summary");
+                summary.className = "category-header";
+
+                const labelSpan = document.createElement("span");
+                labelSpan.textContent = category;
+                labelSpan.style.flex = "1"; // left align
+                summary.appendChild(labelSpan);
+
+                const buttonSpan = document.createElement("span");
+                const enableBtn = document.createElement("button");
+                enableBtn.textContent = "Enable All";
+                enableBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCategory(category, true);
+                };
+                const disableBtn = document.createElement("button");
+                disableBtn.textContent = "Disable All";
+                disableBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCategory(category, false);
+                };
+                buttonSpan.appendChild(enableBtn);
+                buttonSpan.appendChild(disableBtn);
+                summary.appendChild(buttonSpan);
+
+                section.appendChild(summary);
+
+                // Table of pieces
+                const table = document.createElement("table");
+                const tbody = document.createElement("tbody");
+
+                categories[category].forEach(piece => {
+                    const row = document.createElement("tr");
+
+                    const tdCheckbox = document.createElement("td");
+                    const cb = document.createElement("input");
+                    cb.type = "checkbox";
+                    cb.checked = true;
+                    cb.className = category;
+                    cb.dataset.piece = piece;
+                    cb.onchange = updateOutput;
+
+                    tdCheckbox.appendChild(cb);
+
+                    const tdText = document.createElement("td");
+                    tdText.textContent = piece;
+
+                    row.appendChild(tdCheckbox);
+                    row.appendChild(tdText);
+                    tbody.appendChild(row);
+                });
+
+                table.appendChild(tbody);
+                section.appendChild(table);
+                container.appendChild(section);
+            }
+
+            updateOutput();
+        }
+
+        function toggleCategory(category, enabled) {
+            const checkboxes = document.querySelectorAll(`input.${CSS.escape(category)}`);
+            checkboxes.forEach(cb => cb.checked = enabled);
+            updateOutput();
+        }
+
+        function updateOutput() {
+            const checkboxes = document.querySelectorAll("input[type=checkbox][data-piece]");
+            const selected = [...checkboxes].filter(cb => cb.checked).map(cb => `${cb.dataset.piece}=1`);
+            const finalString = selected.join(", ");
+            document.getElementById("outputString").textContent = finalString || "No pieces selected.";
+            document.getElementById("outputStringBottom").textContent = finalString || "No pieces selected.";
+        }
+
+        function copySelection() {
+            const text = document.getElementById("outputString").textContent;
+            navigator.clipboard.writeText(text);
+            alert("Copied selection to clipboard!");
+        }
+
+        function filterPieces() {
+            const filter = document.getElementById("searchBox").value.toLowerCase();
+            document.querySelectorAll("details").forEach(section => {
+                const rows = section.querySelectorAll("tbody tr");
+                let hasMatch = false;
+                rows.forEach(row => {
+                    const text = row.cells[1].textContent.toLowerCase();
+                    const matches = text.includes(filter);
+                    row.style.display = matches ? "" : "none";
+                    if (matches) hasMatch = true;
+                });
+                section.style.display = hasMatch ? "" : "none";
+            });
+        }
+
+        parseCSV(defaultCSV);
+    </script>
+</body>
+
+</html>
