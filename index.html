@@ -638,13 +638,13 @@ Warfare,WizardTable_TW
 
                 const buttonSpan = document.createElement("span");
                 const enableBtn = document.createElement("button");
-                enableBtn.textContent = "Enable All";
+                enableBtn.textContent = "Select All";
                 enableBtn.onclick = (e) => {
                     e.stopPropagation();
                     toggleCategory(category, true);
                 };
                 const disableBtn = document.createElement("button");
-                disableBtn.textContent = "Disable All";
+                disableBtn.textContent = "Deselect All";
                 disableBtn.onclick = (e) => {
                     e.stopPropagation();
                     toggleCategory(category, false);
