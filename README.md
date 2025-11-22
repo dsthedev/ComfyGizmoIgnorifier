@@ -1,6 +1,6 @@
 # Comfy Gizmo Ignorifier
 
-A tool to bulk manage which items are ignored by the wonderful Comfy Gizmo mod; since not everything needs to be rotated on all axis.
+[Comfy Gizmo Ignorifier](https://dsthedev.github.io/ComfyGizmoIgnorifier/) is a tool to bulk manage which items are ignored by the wonderful [Comfy Gizmo](https://thunderstore.io/c/valheim/p/ComfyMods/Gizmo/) mod; since not everything needs to be rotated on all axis.
 
 No more horizontal cauldrons or upside down chairs, sorry!
 
